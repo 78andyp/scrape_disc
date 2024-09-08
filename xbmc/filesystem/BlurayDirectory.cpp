@@ -170,21 +170,20 @@ void CBlurayDirectory::GetPlaylistInfo(std::vector<std::vector<unsigned int>>& c
           pl.emplace_back(clip);
 
           // Add/extend clip information
-          const auto& it =
-              std::find_if(clips.begin(), clips.end(),
-                           [&clip](const std::vector<unsigned int>& x) { return x[0] == clip; });
+          const auto& it = std::ranges::find_if(clips, [&clip](const std::vector<unsigned int>& x)
+                                                { return x[0] == clip; });
           if (it == clips.end())
           {
             // First reference to clip
             const unsigned int duration = static_cast<unsigned int>(
                 (titleInfo->clips[i].out_time - titleInfo->clips[i].in_time) / 90000);
-            clips.emplace_back(std::vector<unsigned int>{clip, duration, playlist});
+            clips.emplace_back(std::vector{clip, duration, playlist});
           }
           else
             // Additional reference to clip
             it->emplace_back(playlist);
 
-          std::string c(reinterpret_cast<char const*>(titleInfo->clips[i].clip_id));
+          std::string c(titleInfo->clips[i].clip_id);
           clipsStr += c + ',';
         }
         if (!clipsStr.empty())
@@ -318,9 +317,8 @@ void CBlurayDirectory::GetEpisodeTitles(const CFileItem& episode,
         for (unsigned int i = PLAYLIST_CLIP_OFFSET; i < PLAYLIST_CLIP_OFFSET + numEpisodes; ++i)
         {
           // Get clip information
-          const auto& it =
-              std::find_if(clips.begin(), clips.end(),
-                           [&](const std::vector<unsigned int>& x) { return x[0] == playlist[i]; });
+          const auto& it = std::ranges::find_if(clips, [&](const std::vector<unsigned int>& x)
+                                                { return x[0] == playlist[i]; });
           const unsigned int duration = it->at(1);
 
           // If clip only appears in one other playlist or is too short this is not a Play All playlist (2)(3)
@@ -334,9 +332,8 @@ void CBlurayDirectory::GetEpisodeTitles(const CFileItem& episode,
           unsigned int p = (it->at(CLIP_PLAYLIST_OFFSET) == playlist[0])
                                ? it->at(CLIP_PLAYLIST_OFFSET + 1)
                                : it->at(CLIP_PLAYLIST_OFFSET);
-          const auto& it2 =
-              std::find_if(playlists.begin(), playlists.end(),
-                           [&p](const std::vector<unsigned int>& x) { return x[0] == p; });
+          const auto& it2 = std::ranges::find_if(playlists, [&p](const std::vector<unsigned int>& x)
+                                                 { return x[0] == p; });
           if (it2->size() > (PLAYLIST_CLIP_OFFSET + 2) ||
               it2->at(PLAYLIST_CLIP_OFFSET) != it->at(0))
           {
@@ -433,9 +430,8 @@ void CBlurayDirectory::GetEpisodeTitles(const CFileItem& episode,
     CLog::Log(LOGDEBUG, "Using Play All playlist method");
 
     // Get the relevant clip
-    const auto& it = std::find_if(playlists.begin(), playlists.end(),
-                                  [&](const std::vector<unsigned int>& x)
-                                  { return x[0] == playAllPlaylists[0]; });
+    const auto& it = std::ranges::find_if(playlists, [&](const std::vector<unsigned int>& x)
+                                          { return x[0] == playAllPlaylists[0]; });
 
     for (unsigned int i = PLAYLIST_CLIP_OFFSET; i < it->size(); ++i)
     {
@@ -445,11 +441,9 @@ void CBlurayDirectory::GetEpisodeTitles(const CFileItem& episode,
         CLog::Log(LOGDEBUG, "Clip is {}", clip);
 
         // Find playlist with starting with that clip (that isn't the play all playlist)
-        const auto& it2 =
-            std::find_if(playlists.begin(), playlists.end(),
-                         [&](const std::vector<unsigned int>& x) {
-                           return (x[PLAYLIST_CLIP_OFFSET] == clip && x[0] != playAllPlaylists[0]);
-                         });
+        const auto& it2 = std::ranges::find_if(
+            playlists, [&](const std::vector<unsigned int>& x)
+            { return (x[PLAYLIST_CLIP_OFFSET] == clip && x[0] != playAllPlaylists[0]); });
         const unsigned int playlist = it2->at(0);
         const unsigned int duration = it2->at(1);
 
@@ -470,14 +464,14 @@ void CBlurayDirectory::GetEpisodeTitles(const CFileItem& episode,
     std::vector<unsigned int> longPlaylists;
 
     // Sort playlists by length
-    std::vector<std::vector<unsigned int>> playlists_length(playlists);
-    std::sort(playlists_length.begin(), playlists_length.end(),
-              [](const std::vector<unsigned int>& i, const std::vector<unsigned int>& j)
-              {
-                if (i[1] == j[1])
-                  return i[0] < j[0];
-                return i[1] > j[1];
-              });
+    std::vector playlists_length(playlists);
+    std::ranges::sort(playlists_length,
+                      [](const std::vector<unsigned int>& i, const std::vector<unsigned int>& j)
+                      {
+                        if (i[1] == j[1])
+                          return i[0] < j[0];
+                        return i[1] > j[1];
+                      });
 
     // Remove duplicate lengths
     for (unsigned int i = 0; i < playlists_length.size() - 1; ++i)
@@ -504,7 +498,7 @@ void CBlurayDirectory::GetEpisodeTitles(const CFileItem& episode,
     useCommonPlaylist = numEpisodes == 1 && long_playlists > numEpisodes && foundCommonPlaylist;
 
     // Get longest playlist(s)
-    unsigned int foundPlaylists = 0;
+    unsigned int foundPlaylists{0};
     for (const auto& playlist : playlists_length)
     {
       // Check not a 'Play All' playlist
@@ -523,8 +517,7 @@ void CBlurayDirectory::GetEpisodeTitles(const CFileItem& episode,
     if (foundPlaylists > 0 && foundPlaylists == numEpisodes && !isSpecial && !useCommonPlaylist)
     {
       // Sort found playlists
-      std::sort(longPlaylists.begin(), longPlaylists.end(),
-                [](unsigned int i, unsigned int j) { return (i < j); });
+      std::ranges::sort(longPlaylists, [](unsigned int i, unsigned int j) { return (i < j); });
 
       // Ensure sequential
       if (longPlaylists[0] + numEpisodes - 1 == longPlaylists[numEpisodes - 1])
@@ -551,12 +544,11 @@ void CBlurayDirectory::GetEpisodeTitles(const CFileItem& episode,
       for (const auto& playlist : playlists_length)
       {
         // Check not a 'Play All' playlist
-        const auto& it =
-            std::find_if(playAllPlaylists.begin(), playAllPlaylists.end(),
-                         [&playlist](const unsigned int& x) { return x == playlist[0]; });
+        const auto& it = std::ranges::find_if(playAllPlaylists, [&playlist](const unsigned int& x)
+                                              { return x == playlist[0]; });
 
         if (it == playAllPlaylists.end() && playlist[1] >= MIN_SPECIAL_LENGTH &&
-            std::count(longPlaylists.begin(), longPlaylists.end(), playlist[0]) == 0)
+            std::ranges::count(longPlaylists, playlist[0]) == 0)
         {
           // This will only work if one special on disc (otherwise no way of knowing lengths)
           if (specialsOnDisc.size() == 1)
@@ -640,9 +632,7 @@ void CBlurayDirectory::GetEpisodeTitles(const CFileItem& episode,
         std::vector<int> langs;
         langs.reserve(candidatePlaylists.size());
         for (const auto& playlist : candidatePlaylists)
-          langs.emplace_back(std::count(playlist_langs[playlist.first].begin(),
-                                        playlist_langs[playlist.first].end(), '/') +
-                             1);
+          langs.emplace_back(static_cast<int>(std::ranges::count(playlist_langs[playlist.first], '/') + 1));
 
         // Loop backwards as desired length preferred to the longest length
         int keepPlaylist = -1;
@@ -736,15 +726,13 @@ void CBlurayDirectory::GetEpisodeTitles(const CFileItem& episode,
   {
     for (unsigned int i = 0; i < candidatePlaylists.size() - 1; ++i)
     {
-      const auto& it = std::find_if(playlists.begin(), playlists.end(),
-                                    [&](const std::vector<unsigned int>& x)
-                                    { return x[0] == candidatePlaylists[i].first; });
+      const auto& it = std::ranges::find_if(playlists, [&](const std::vector<unsigned int>& x)
+                                            { return x[0] == candidatePlaylists[i].first; });
 
       for (unsigned int j = i + 1; j < candidatePlaylists.size(); ++j)
       {
-        const auto& it2 = std::find_if(playlists.begin(), playlists.end(),
-                                       [&](const std::vector<unsigned int>& x)
-                                       { return x[0] == candidatePlaylists[j].first; });
+        const auto& it2 = std::ranges::find_if(playlists, [&](const std::vector<unsigned int>& x)
+                                               { return x[0] == candidatePlaylists[j].first; });
 
         if (std::equal(it->begin() + PLAYLIST_CLIP_OFFSET, it->end(),
                        it2->begin() + PLAYLIST_CLIP_OFFSET))
@@ -772,9 +760,8 @@ void CBlurayDirectory::GetEpisodeTitles(const CFileItem& episode,
     const auto newItem{std::make_shared<CFileItem>("", false)};
 
     // Get clips
-    const auto& it = std::find_if(playlists.begin(), playlists.end(),
-                                  [&playlist](const std::vector<unsigned int>& x)
-                                  { return x[0] == playlist.first; });
+    const auto& it = std::ranges::find_if(playlists, [&playlist](const std::vector<unsigned int>& x)
+                                          { return x[0] == playlist.first; });
     const int duration = static_cast<int>(it->at(1));
 
     // Get languages
@@ -878,22 +865,21 @@ void CBlurayDirectory::GetTitles(const int job, CFileItemList& items, const int 
   // Episodes - by playlist number
   if (sort != SORT_TITLES_NONE)
   {
-    std::sort(titleList.begin(), titleList.end(),
-              [&sort](const BLURAY_TITLE_INFO* i, const BLURAY_TITLE_INFO* j)
-              {
-                if (sort == SORT_TITLES_MOVIE)
-                {
-                  if (i->duration == j->duration)
-                    return i->playlist < j->playlist;
-                  return i->duration > j->duration;
-                }
-                return i->playlist < j->playlist;
-              });
+    std::ranges::sort(titleList,
+                      [&sort](const BLURAY_TITLE_INFO* i, const BLURAY_TITLE_INFO* j)
+                      {
+                        if (sort == SORT_TITLES_MOVIE)
+                        {
+                          if (i->duration == j->duration)
+                            return i->playlist < j->playlist;
+                          return i->duration > j->duration;
+                        }
+                        return i->playlist < j->playlist;
+                      });
 
-    const auto pivot = std::find_if(titleList.begin(), titleList.end(),
-                                    [&mainPlaylist](const BLURAY_TITLE_INFO* title) {
-                                      return title->playlist == static_cast<uint32_t>(mainPlaylist);
-                                    });
+    const auto pivot =
+        std::ranges::find_if(titleList, [&mainPlaylist](const BLURAY_TITLE_INFO* title)
+                             { return title->playlist == static_cast<uint32_t>(mainPlaylist); });
     if (pivot != titleList.end())
       std::rotate(titleList.begin(), pivot, pivot + 1);
   }

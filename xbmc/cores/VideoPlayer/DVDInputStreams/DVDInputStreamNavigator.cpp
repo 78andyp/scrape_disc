@@ -1600,7 +1600,7 @@ void CDVDInputStreamNavigator::GetPlaylistInfo(std::vector<std::vector<unsigned 
     auto pl = std::vector{static_cast<unsigned int>(i)};
 
     // Save playlist duration
-    pl.emplace_back(duration / 90000);
+    pl.emplace_back(static_cast<unsigned int>(duration / 90000));
 
     // Add chapters to playlist
     if (chapters > 0)
@@ -1608,7 +1608,7 @@ void CDVDInputStreamNavigator::GetPlaylistInfo(std::vector<std::vector<unsigned 
       std::string chapterStr;
       for (uint32_t j = 0; j < chapters; ++j)
       {
-        pl.emplace_back(times[j] / 90000);
+        pl.emplace_back(static_cast<unsigned int>(times[j] / 90000));
         chapterStr += StringUtils::Format("{},", times[j] / 90000);
       }
 

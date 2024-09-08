@@ -6601,7 +6601,6 @@ void CVideoDatabase::UpdateTables(int iVersion)
 
     m_pDS->exec("DELETE FROM episode WHERE idSeason NOT IN (SELECT idSeason from seasons)");
   }
-}
 
   if (iVersion < 134)
   {
