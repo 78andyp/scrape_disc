@@ -883,6 +883,12 @@ bool CFileItem::Exists(bool bUseCache /* = true */) const
   if (URIUtils::IsStack(strPath))
     strPath = CStackDirectory::GetFirstStackedFile(strPath);
 
+  if (URIUtils::IsBlurayPath(strPath))
+  {
+    strPath = CURL(strPath).GetHostName();
+    return CDirectory::Exists(strPath, bUseCache);
+  }
+
   if (m_bIsFolder)
     return CDirectory::Exists(strPath, bUseCache);
   else
@@ -1360,7 +1366,7 @@ bool CFileItem::IsSamePath(const CFileItem *item) const
     if (item->HasProperty("item_start") || HasProperty("item_start"))
       return (item->GetProperty("item_start") == GetProperty("item_start"));
     // See if we have associated a bluray playlist
-    if (VIDEO::IsBlurayPlaylist(*this) || VIDEO::IsBlurayPlaylist(*item))
+    if (URIUtils::IsBlurayPath(GetDynPath()) || URIUtils::IsBlurayPath(item->GetDynPath()))
       return (GetDynPath() == item->GetDynPath());
     return true;
   }
@@ -1984,8 +1990,9 @@ std::string CFileItem::GetBaseMoviePath(bool bUseFolderNames) const
     return GetLocalMetadataPath();
 
   if (bUseFolderNames &&
-     (!m_bIsFolder || URIUtils::IsInArchive(m_strPath) ||
-     (HasVideoInfoTag() && GetVideoInfoTag()->m_iDbId > 0 && !CMediaTypes::IsContainer(GetVideoInfoTag()->m_type))))
+      (!m_bIsFolder || URIUtils::IsInArchive(m_strPath) || URIUtils::IsBlurayPath(m_strPath) ||
+       (HasVideoInfoTag() && GetVideoInfoTag()->m_iDbId > 0 &&
+        !CMediaTypes::IsContainer(GetVideoInfoTag()->m_type))))
   {
     std::string name2(strMovieName);
     URIUtils::GetParentPath(name2,strMovieName);
