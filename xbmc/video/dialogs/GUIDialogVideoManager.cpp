@@ -481,10 +481,12 @@ void CGUIDialogVideoManager::RefreshSelectedVideoAsset()
     m_selectedVideoAsset = m_videoAssetsList->Get(0);
 }
 
-void CGUIDialogVideoManager::ChoosePlaylist(const std::shared_ptr<CFileItem>& item)
+void CGUIDialogVideoManager::ChoosePlaylist(const std::shared_ptr<CFileItem>& item,
+                                            bool replaceExistingFile /* = true */)
 {
   // Select the playlist using the simple menu
   const std::string oldPath{item->GetDynPath()};
+  const int idMovie{m_database.GetMovieId(oldPath)};
   if (CGUIDialogSimpleMenu::ShowPlaySelection(*item, true, true))
   {
     if (oldPath != item->GetDynPath())
@@ -496,16 +498,39 @@ void CGUIDialogVideoManager::ChoosePlaylist(const std::shared_ptr<CFileItem>& it
         return;
       }
 
-      const CVideoInfoTag* tag{item->GetVideoInfoTag()};
+      bool videoDbSuccess{false};
       m_database.BeginTransaction();
-      // Don't update stream details as not played yet so any existing may not relate to this playlist
-      if (m_database.SetFileForMovie(item->GetDynPath(), m_database.GetMovieId(oldPath),
-                                     tag->m_iFileId, false))
+      if (replaceExistingFile)
+        // Don't update stream details as playlist not played yet so any existing details
+        // may not relate to this playlist
+        videoDbSuccess =
+            m_database.SetFileForMovie(item->GetDynPath(), m_database.GetMovieId(oldPath),
+                                       item->GetVideoInfoTag()->m_iFileId, false);
+      else
+      {
+        // choose a video version for the video
+        const int idVideoVersion{ChooseVideoAsset(item, VideoAssetType::VERSION, "")};
+        if (idVideoVersion < 0)
+          return;
+
+        const int idFile{m_database.AddFile(item->GetDynPath())};
+        if (idFile > 0)
+        {
+          videoDbSuccess = true;
+          m_database.AddVideoVersion(item->GetVideoContentType(), idMovie, idFile, idVideoVersion,
+                                     VideoAssetType::VERSION);
+        }
+      }
+
+      if (videoDbSuccess)
         m_database.CommitTransaction();
       else
         m_database.RollbackTransaction();
 
+      // refresh data and controls
       Refresh();
+      UpdateControls();
+      m_hasUpdatedItems = true;
     }
   }
 }

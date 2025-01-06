@@ -12681,6 +12681,23 @@ bool CVideoDatabase::ConvertVideoToVersion(VideoDbContentType itemType,
   return true;
 }
 
+bool CVideoDatabase::AddVideoVersion(VideoDbContentType itemType,
+                                     int dbIdSource,
+                                     int idFile,
+                                     int idVideoVersion,
+                                     VideoAssetType assetType)
+{
+  MediaType mediaType;
+  VideoContentTypeToString(itemType, mediaType);
+
+  ExecuteQuery(
+      PrepareSQL("INSERT INTO videoversion (idFile, idMedia, media_type, itemType, idType) "
+                 "VALUES(%i, %i, '%s', %i, %i)",
+                 idFile, dbIdSource, mediaType.c_str(), assetType, idVideoVersion));
+
+  return true;
+}
+
 void CVideoDatabase::SetDefaultVideoVersion(VideoDbContentType itemType, int dbId, int idFile)
 {
   if (!m_pDB || !m_pDS)
