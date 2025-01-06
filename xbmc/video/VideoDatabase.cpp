@@ -3039,7 +3039,10 @@ bool CVideoDatabase::SetFileForEpisode(const std::string& fileAndPath, int idEpi
   return false;
 }
 
-bool CVideoDatabase::SetFileForMovie(const std::string& fileAndPath, int idMovie, int oldIdFile)
+bool CVideoDatabase::SetFileForMovie(const std::string& fileAndPath,
+                                     int idMovie,
+                                     int oldIdFile,
+                                     bool updateStreamDetails /* = true */)
 {
   assert(m_pDB->in_transaction());
 
@@ -3062,10 +3065,14 @@ bool CVideoDatabase::SetFileForMovie(const std::string& fileAndPath, int idMovie
                      idFile, oldIdFile);
     m_pDS->exec(sql);
 
-    sql = PrepareSQL("UPDATE streamdetails SET idFile=%i WHERE idFile=%i AND NOT EXISTS (SELECT 1 "
+    if (updateStreamDetails)
+    {
+      sql =
+          PrepareSQL("UPDATE streamdetails SET idFile=%i WHERE idFile=%i AND NOT EXISTS (SELECT 1 "
                      "FROM streamdetails WHERE idFile=%i)",
                      idFile, oldIdFile, idFile);
-    m_pDS->exec(sql);
+      m_pDS->exec(sql);
+    }
 
     return DeleteFile(oldIdFile);
   }

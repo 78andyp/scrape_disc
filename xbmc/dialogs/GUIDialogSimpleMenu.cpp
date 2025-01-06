@@ -52,9 +52,12 @@ protected:
 };
 }
 
-bool CGUIDialogSimpleMenu::ShowPlaySelection(CFileItem& item, bool forceSelection /* = false */)
+bool CGUIDialogSimpleMenu::ShowPlaySelection(CFileItem& item,
+                                             bool forceSelection /* = false */,
+                                             bool skipCheck /* = false */)
 {
-  if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetInt(CSettings::SETTING_DISC_PLAYBACK) != BD_PLAYBACK_SIMPLE_MENU)
+  if (!skipCheck && CServiceBroker::GetSettingsComponent()->GetSettings()->GetInt(
+                        CSettings::SETTING_DISC_PLAYBACK) != BD_PLAYBACK_SIMPLE_MENU)
     return true;
 
   if (forceSelection && VIDEO::IsBlurayPlaylist(item))

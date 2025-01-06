@@ -593,7 +593,10 @@ public:
                            int idShow,
                            int idEpisode = -1);
   bool SetFileForEpisode(const std::string& fileAndPath, int idEpisode, int oldIdFile);
-  bool SetFileForMovie(const std::string& fileAndPath, int idMovie, int oldIdFile);
+  bool SetFileForMovie(const std::string& fileAndPath,
+                       int idMovie,
+                       int oldIdFile,
+                       bool updateStreamDetails = true);
   int SetDetailsForMusicVideo(CVideoInfoTag& details,
                               const std::map<std::string, std::string>& artwork,
                               int idMVideo = -1);
