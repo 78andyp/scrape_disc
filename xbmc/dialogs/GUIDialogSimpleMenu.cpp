@@ -141,7 +141,10 @@ bool CGUIDialogSimpleMenu::ShowPlaySelection(CFileItem& item, const std::string&
       else
         path = item.GetDynPath(); // If not set above (choose playlist selected)
       item.SetDynPath(item_new->GetDynPath());
-      item.SetProperty("get_stream_details_from_player", true);
+      item.GetVideoInfoTag()->m_streamDetails =
+          item_new->GetVideoInfoTag()
+              ->m_streamDetails; // Basic stream details from BLURAY_TITLE INFO
+      item.SetProperty("get_stream_details_from_player", true); // Overwrite when played
       item.SetProperty("original_listitem_url", path);
       return true;
     }

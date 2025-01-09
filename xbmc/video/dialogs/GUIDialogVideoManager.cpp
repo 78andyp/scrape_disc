@@ -501,14 +501,26 @@ void CGUIDialogVideoManager::ChoosePlaylist(const std::shared_ptr<CFileItem>& it
       bool videoDbSuccess{false};
       m_database.BeginTransaction();
       if (replaceExistingFile)
+      {
         // Don't update stream details as playlist not played yet so any existing details
         // may not relate to this playlist
         videoDbSuccess =
             m_database.SetFileForMovie(item->GetDynPath(), m_database.GetMovieId(oldPath),
                                        item->GetVideoInfoTag()->m_iFileId, false);
+        if (videoDbSuccess)
+        {
+          m_database.SetStreamDetailsForFile(item->GetVideoInfoTag()->m_streamDetails,
+                                             item->GetDynPath());
+
+          // Notify all windows to update the file item
+          CGUIMessage msg{GUI_MSG_NOTIFY_ALL,        0,   0, GUI_MSG_UPDATE_ITEM,
+                          GUI_MSG_FLAG_FORCE_UPDATE, item};
+          CServiceBroker::GetGUI()->GetWindowManager().SendMessage(msg);
+        }
+      }
       else
       {
-        // choose a video version for the video
+        // Choose a video version for the video
         const int idVideoVersion{ChooseVideoAsset(item, VideoAssetType::VERSION, "")};
         if (idVideoVersion < 0)
           return;
@@ -517,6 +529,7 @@ void CGUIDialogVideoManager::ChoosePlaylist(const std::shared_ptr<CFileItem>& it
         if (idFile > 0)
         {
           videoDbSuccess = true;
+          m_database.SetStreamDetailsForFileId(item->GetVideoInfoTag()->m_streamDetails, idFile);
           m_database.AddVideoVersion(item->GetVideoContentType(), idMovie, idFile, idVideoVersion,
                                      VideoAssetType::VERSION);
         }
