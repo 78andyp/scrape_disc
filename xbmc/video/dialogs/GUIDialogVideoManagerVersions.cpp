@@ -32,7 +32,6 @@
 #include "video/VideoManagerTypes.h"
 #include "video/VideoThumbLoader.h"
 
-#include <algorithm>
 #include <string>
 
 static constexpr unsigned int CONTROL_BUTTON_ADD_VERSION = 22;
